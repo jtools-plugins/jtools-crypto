@@ -7,39 +7,55 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
+import com.lhstack.tools.plugins.Helper
 import org.jetbrains.yaml.YAMLFileType
 import java.awt.event.ActionEvent
 import javax.swing.AbstractAction
 import javax.swing.Action
 import javax.swing.JComponent
 
-class DecryptEnvDialog(private val project:Project):DialogWrapper(project) {
+class DecryptEnvDialog(private val project: Project) : DialogWrapper(project) {
 
-    private val textField = MultiLanguageTextField(YAMLFileType.YML,project,
+    private val textField = MultiLanguageTextField(
+        YAMLFileType.YML, project,
         Global.getInstance(project).crypto
     ).let {
-        it.document.addDocumentListener(object : DocumentListener{
+        it.document.addDocumentListener(object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
                 Global.getInstance(project).crypto = event.document.text
             }
-        },it)
-        Disposer.register(this.disposable,it)
+        }, it)
+        Disposer.register(this.disposable, it)
         it
     }
+
     init {
         this.title = "解密配置"
-        this.setSize(800,600)
+        this.setSize(800, 600)
         this.setOKButtonText("确认")
         this.setCancelButtonText("取消")
         this.init()
     }
 
     override fun createActions(): Array<Action> {
-        return arrayOf(object: AbstractAction("模板") {
+        return arrayOf(object : AbstractAction("密码类型") {
+            override fun actionPerformed(e: ActionEvent) {
+                Helper.getSysLogger(project.locationHash).activeConsolePanel().info(CryptoEnum.entries.map { it.name }.toList())
+            }
+
+        }, object : AbstractAction("模板") {
             override fun actionPerformed(e: ActionEvent) {
                 val text = textField.text
-                if(text.isNotEmpty()){
-                    if(Messages.OK != Messages.showOkCancelDialog(project,"再次点击确认会覆盖已有配置","警告","确定","取消",AllIcons.General.WarningDialog)){
+                if (text.isNotEmpty()) {
+                    if (Messages.OK != Messages.showOkCancelDialog(
+                            project,
+                            "再次点击确认会覆盖已有配置",
+                            "警告",
+                            "确定",
+                            "取消",
+                            AllIcons.General.WarningDialog
+                        )
+                    ) {
                         return
                     }
                 }
@@ -91,7 +107,8 @@ class DecryptEnvDialog(private val project:Project):DialogWrapper(project) {
                       encryptType: hex
                 """.trimIndent()
             }
-        },okAction)
+        }, okAction)
     }
+
     override fun createCenterPanel(): JComponent = textField
 }

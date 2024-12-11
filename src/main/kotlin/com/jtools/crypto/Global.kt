@@ -124,7 +124,6 @@ enum class CryptoEnum(val decrypt: (Crypto, ByteArray) -> String, val encrypt: (
     MD5_UPPER({_,_ -> "md5不支持解密"},{_,rawBytes -> DigestUtils.md5Hex(rawBytes).uppercase()}),
 
 
-
     DES_CBC({ c, rawBytes ->
         val cipher = Cipher.getInstance("DES/CBC/Pkcs5Padding")
         cipher.init(
