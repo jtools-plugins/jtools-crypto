@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.intellij") version "1.17.2"
 }
 
-group = "com.jtools.mybatislog"
+group = "com.jtools.crypto"
 version = "v1.0.0"
 
 
@@ -20,7 +20,7 @@ intellij {
     plugins.set(listOf("com.intellij.java", "org.jetbrains.plugins.yaml", "org.intellij.groovy","org.jetbrains.kotlin"))
 }
 dependencies {
-    implementation(files("C:/Users/lhstack/.jtools/sdk/sdk.jar"))
+    implementation(files("C:/Users/1/.jtools/sdk/sdk.jar"))
     testImplementation(kotlin("test"))
 }
 
@@ -28,8 +28,8 @@ dependencies {
 tasks {
     // Set the JVM compatibility versions
     withType<JavaCompile> {
-        sourceCompatibility = "11"
-        targetCompatibility = "11"
+        sourceCompatibility = "8"
+        targetCompatibility = "8"
         options.encoding = "UTF-8"
     }
     withType<JavaExec> {
@@ -37,11 +37,8 @@ tasks {
     }
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = "11"
+        kotlinOptions.jvmTarget = "1.8"
         kotlinOptions.freeCompilerArgs = listOf("-Xjvm-default=all")
     }
 
-}
-kotlin {
-    jvmToolchain(17)
 }
