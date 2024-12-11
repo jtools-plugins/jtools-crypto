@@ -20,6 +20,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.awt.RelativePoint
 import java.awt.BorderLayout
+import java.awt.Dimension
 import java.awt.Point
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -47,8 +48,10 @@ class EncryptView(private val project: Project) : JPanel(BorderLayout()), Dispos
 
             this.document.addDocumentListener(object :DocumentListener{
                 override fun documentChanged(event: DocumentEvent) {
-                    Global.getInstance(project).selectCryptoInstance()?.let {
-                        output.text = it.encrypt(document.text.toByteArray(StandardCharsets.UTF_8))
+                    Global.getInstance(project).selectCryptoInstance()?.let {crypto ->
+                        document.text.takeIf { it.isNotEmpty() }?.let {
+                            output.text = crypto.encrypt(document.text.toByteArray(StandardCharsets.UTF_8))
+                        }
                     }
                 }
             },this)
@@ -74,6 +77,7 @@ class EncryptView(private val project: Project) : JPanel(BorderLayout()), Dispos
                                 return super.onChosen(crypto, finalChoice)
                             }
                         })
+                        popup.size = Dimension(300,200)
                         popup.show(RelativePoint(e.component, Point(e.point.x,e.point.y + 10)))
                     }
                 }
@@ -130,6 +134,7 @@ class EncryptView(private val project: Project) : JPanel(BorderLayout()), Dispos
                             return super.onChosen(crypto, finalChoice)
                         }
                     })
+                    popup.size = Dimension(300,200)
                     popup.showInBestPositionFor(e.dataContext)
                 }
 

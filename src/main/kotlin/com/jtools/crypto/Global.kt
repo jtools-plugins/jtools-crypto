@@ -9,11 +9,13 @@ import com.intellij.openapi.components.Storage
 import com.intellij.openapi.project.Project
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.binary.Hex
+import org.apache.commons.codec.digest.DigestUtils
 import org.yaml.snakeyaml.Yaml
 import java.nio.charset.StandardCharsets
 import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
+import java.util.stream.Collectors
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -106,6 +108,183 @@ class GlobalState {
     }
 }
 
+enum class CryptoEnum(val decrypt: (Crypto, ByteArray) -> String, val encrypt: (Crypto, ByteArray) -> String) {
+    UN_KNOW({ _, _ ->
+        "不知道的解密类型,仅支持以下类型：${CryptoEnum.entries.filter { it.name != "UN_KNOW" }.map { it.name }.toList()}"
+    }, { _, _ ->
+        "不知道的加密类型,仅支持以下类型：${CryptoEnum.entries.filter { it.name != "UN_KNOW" }.map { it.name }.toList()}"
+    }),
+
+    MD5({ _, _ ->
+        "md5不支持解密"
+    }, { _, rawBytes ->
+        DigestUtils.md5Hex(rawBytes)
+    }),
+
+    MD5_UPPER({_,_ -> "md5不支持解密"},{_,rawBytes -> DigestUtils.md5Hex(rawBytes).uppercase()}),
+
+
+
+    DES_CBC({ c, rawBytes ->
+        val cipher = Cipher.getInstance("DES/CBC/Pkcs5Padding")
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            SecretKeySpec(c.key?.toByteArray(StandardCharsets.UTF_8), "DES"),
+            IvParameterSpec(c.iv?.toByteArray(StandardCharsets.UTF_8))
+        )
+        String(cipher.doFinal(rawBytes), StandardCharsets.UTF_8)
+    }, { c, rawBytes ->
+        val cipher = Cipher.getInstance("DES/CBC/Pkcs5Padding")
+        cipher.init(
+            Cipher.ENCRYPT_MODE, SecretKeySpec(
+                c.key?.toByteArray(
+                    StandardCharsets.UTF_8
+                ), "DES"
+            ),
+            IvParameterSpec(c.iv?.toByteArray(StandardCharsets.UTF_8))
+        )
+        if (c.encryptType == "base64") {
+            Base64.encodeBase64String(cipher.doFinal(rawBytes))
+        } else {
+            Hex.encodeHexString(cipher.doFinal(rawBytes))
+        }
+    }),
+
+    DES_ECB({ c, rawBytes ->
+        val cipher = Cipher.getInstance("DES/ECB/Pkcs5Padding")
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            SecretKeySpec(c.key?.toByteArray(StandardCharsets.UTF_8), "DES")
+        )
+        String(cipher.doFinal(rawBytes), StandardCharsets.UTF_8)
+    }, { c, rawBytes ->
+        val cipher = Cipher.getInstance("DES/ECB/Pkcs5Padding")
+        cipher.init(
+            Cipher.ENCRYPT_MODE, SecretKeySpec(
+                c.key?.toByteArray(
+                    StandardCharsets.UTF_8
+                ), "DES"
+            )
+        )
+        if (c.encryptType == "base64") {
+            Base64.encodeBase64String(cipher.doFinal(rawBytes))
+        } else {
+            Hex.encodeHexString(cipher.doFinal(rawBytes))
+        }
+    }),
+
+    AES_CBC({ c, rawBytes ->
+        val cipher = Cipher.getInstance("AES/CBC/Pkcs5Padding")
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            SecretKeySpec(c.key?.toByteArray(StandardCharsets.UTF_8), "AES"),
+            IvParameterSpec(c.iv?.toByteArray(StandardCharsets.UTF_8))
+        )
+        String(cipher.doFinal(rawBytes), StandardCharsets.UTF_8)
+    }, { c, rawBytes ->
+        val cipher = Cipher.getInstance("AES/CBC/Pkcs5Padding")
+        cipher.init(
+            Cipher.ENCRYPT_MODE, SecretKeySpec(
+                c.key?.toByteArray(
+                    StandardCharsets.UTF_8
+                ), "AES"
+            ),
+            IvParameterSpec(c.iv?.toByteArray(StandardCharsets.UTF_8))
+        )
+        if (c.encryptType == "base64") {
+            Base64.encodeBase64String(cipher.doFinal(rawBytes))
+        } else {
+            Hex.encodeHexString(cipher.doFinal(rawBytes))
+        }
+    }),
+
+    AES_ECB({ c, rawBytes ->
+        val cipher = Cipher.getInstance("AES/ECB/Pkcs5Padding")
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            SecretKeySpec(c.key?.toByteArray(StandardCharsets.UTF_8), "AES")
+        )
+        String(cipher.doFinal(rawBytes), StandardCharsets.UTF_8)
+    }, { c, rawBytes ->
+        val cipher = Cipher.getInstance("AES/ECB/Pkcs5Padding")
+        cipher.init(
+            Cipher.ENCRYPT_MODE, SecretKeySpec(
+                c.key?.toByteArray(
+                    StandardCharsets.UTF_8
+                ), "AES"
+            )
+        )
+        if (c.encryptType == "base64") {
+            Base64.encodeBase64String(cipher.doFinal(rawBytes))
+        } else {
+            Hex.encodeHexString(cipher.doFinal(rawBytes))
+        }
+    }),
+    RSA_PUBLIC({ c, rawBytes ->
+        c.key?.let {
+            X509EncodedKeySpec(Base64.decodeBase64(it)).let { key ->
+                KeyFactory.getInstance("RSA")?.generatePublic(key)
+            }
+        }?.let {
+            Cipher.getInstance("RSA")?.let { rsa ->
+                rsa.init(Cipher.DECRYPT_MODE, it)
+                String(rsa.doFinal(rawBytes), StandardCharsets.UTF_8)
+            }
+        } ?: ""
+    }, { c, rawBytes ->
+        c.key?.let {
+            X509EncodedKeySpec(Base64.decodeBase64(it)).let { key ->
+                KeyFactory.getInstance("RSA")?.generatePublic(key)
+            }
+        }?.let {
+            Cipher.getInstance("RSA")?.let { rsa ->
+                rsa.init(Cipher.ENCRYPT_MODE, it)
+                if (c.encryptType == "base64") {
+                    Base64.encodeBase64String(rsa.doFinal(rawBytes))
+                } else {
+                    Hex.encodeHexString(rsa.doFinal(rawBytes))
+                }
+            }
+        } ?: ""
+    }),
+    RSA_PRIVATE({ c, rawBytes ->
+        c.key?.let {
+            PKCS8EncodedKeySpec(Base64.decodeBase64(it)).let { key ->
+                KeyFactory.getInstance("RSA")?.generatePrivate(key)
+            }
+        }?.let {
+            Cipher.getInstance("RSA")?.let { rsa ->
+                rsa.init(Cipher.DECRYPT_MODE, it)
+                String(rsa.doFinal(rawBytes), StandardCharsets.UTF_8)
+            }
+        } ?: ""
+    }, { c, rawBytes ->
+        c.key?.let {
+            PKCS8EncodedKeySpec(Base64.decodeBase64(it)).let { key ->
+                KeyFactory.getInstance("RSA")?.generatePrivate(key)
+            }
+        }?.let {
+            Cipher.getInstance("RSA")?.let { rsa ->
+                rsa.init(Cipher.ENCRYPT_MODE, it)
+                if (c.encryptType == "base64") {
+                    Base64.encodeBase64String(rsa.doFinal(rawBytes))
+                } else {
+                    Hex.encodeHexString(rsa.doFinal(rawBytes))
+                }
+            }
+        } ?: ""
+    });
+
+    companion object {
+        private val cache: MutableMap<String, CryptoEnum> =
+            CryptoEnum.entries.stream().collect(Collectors.toMap({ it.name }, { it }))
+
+        fun find(name: String): CryptoEnum {
+            return cache.getOrDefault(name, CryptoEnum.UN_KNOW)
+        }
+    }
+}
+
 class Crypto {
     var key: String? = ""
     var iv: String? = ""
@@ -119,127 +298,16 @@ class Crypto {
     }
 
     fun decrypt(rawBytes: ByteArray): String {
-        when (this.type) {
-            "AES_CBC" -> {
-
-                val cipher = Cipher.getInstance("AES/CBC/Pkcs5Padding")
-                cipher.init(
-                    Cipher.DECRYPT_MODE,
-                    SecretKeySpec(this.key?.toByteArray(StandardCharsets.UTF_8), "AES"),
-                    IvParameterSpec(this.iv?.toByteArray(StandardCharsets.UTF_8))
-                )
-                return String(cipher.doFinal(rawBytes), StandardCharsets.UTF_8)
-            }
-
-            "AES_ECB" -> {
-                val cipher = Cipher.getInstance("AES/ECB/Pkcs5Padding")
-                cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(this.key?.toByteArray(StandardCharsets.UTF_8), "AES"))
-                return String(cipher.doFinal(rawBytes), StandardCharsets.UTF_8)
-            }
-
-            "RSA_PUBLIC" -> {
-                this.key?.let {
-                    X509EncodedKeySpec(Base64.decodeBase64(it)).let { key ->
-                        KeyFactory.getInstance("RSA")?.generatePublic(key)
-                    }
-                }?.let {
-                    Cipher.getInstance("RSA")?.let { rsa ->
-                        rsa.init(Cipher.DECRYPT_MODE, it)
-                        return String(rsa.doFinal(rawBytes), StandardCharsets.UTF_8)
-                    }
-                }
-            }
-
-            "RSA_PRIVATE" -> {
-                this.key?.let {
-                    PKCS8EncodedKeySpec(Base64.decodeBase64(it)).let { key ->
-                        KeyFactory.getInstance("RSA")?.generatePrivate(key)
-                    }
-                }?.let {
-                    Cipher.getInstance("RSA")?.let { rsa ->
-                        rsa.init(Cipher.DECRYPT_MODE, it)
-                        return String(rsa.doFinal(rawBytes), StandardCharsets.UTF_8)
-                    }
-                }
-            }
-        }
-        return "解密失败"
+        return CryptoEnum.find(this.type ?: "").decrypt.invoke(this, rawBytes)
     }
 
     fun encrypt(rawBytes: ByteArray): String {
-        try{
-            when (this.type) {
-                "AES_CBC" -> {
-                    val cipher = Cipher.getInstance("AES/CBC/Pkcs5Padding")
-                    cipher.init(
-                        Cipher.ENCRYPT_MODE, SecretKeySpec(
-                            this.key?.toByteArray(
-                                StandardCharsets.UTF_8
-                            ), "AES"
-                        ),
-                        IvParameterSpec(this.iv?.toByteArray(StandardCharsets.UTF_8))
-                    )
-                    return if (encryptType == "base64") {
-                        Base64.encodeBase64String(cipher.doFinal(rawBytes))
-                    } else {
-                        Hex.encodeHexString(cipher.doFinal(rawBytes))
-                    }
-                }
-
-                "AES_ECB" -> {
-                    val cipher = Cipher.getInstance("AES/ECB/Pkcs5Padding")
-                    cipher.init(
-                        Cipher.ENCRYPT_MODE, SecretKeySpec(
-                            this.key?.toByteArray(
-                                StandardCharsets.UTF_8
-                            ), "AES"
-                        )
-                    )
-                    return if (encryptType == "base64") {
-                        Base64.encodeBase64String(cipher.doFinal(rawBytes))
-                    } else {
-                        Hex.encodeHexString(cipher.doFinal(rawBytes))
-                    }
-                }
-
-                "RSA_PUBLIC" -> {
-                    this.key?.let {
-                        X509EncodedKeySpec(Base64.decodeBase64(it)).let { key ->
-                            KeyFactory.getInstance("RSA")?.generatePublic(key)
-                        }
-                    }?.let {
-                        Cipher.getInstance("RSA")?.let { rsa ->
-                            rsa.init(Cipher.ENCRYPT_MODE, it)
-                            return if (encryptType == "base64") {
-                                Base64.encodeBase64String(rsa.doFinal(rawBytes))
-                            } else {
-                                Hex.encodeHexString(rsa.doFinal(rawBytes))
-                            }
-                        }
-                    }
-                }
-
-                "RSA_PRIVATE" -> {
-                    this.key?.let {
-                        PKCS8EncodedKeySpec(Base64.decodeBase64(it)).let { key ->
-                            KeyFactory.getInstance("RSA")?.generatePrivate(key)
-                        }
-                    }?.let {
-                        Cipher.getInstance("RSA")?.let { rsa ->
-                            rsa.init(Cipher.ENCRYPT_MODE, it)
-                            return if (encryptType == "base64") {
-                                Base64.encodeBase64String(rsa.doFinal(rawBytes))
-                            } else {
-                                Hex.encodeHexString(rsa.doFinal(rawBytes))
-                            }
-                        }
-                    }
-                }
-            }
-        }catch (ignore:Throwable){
-
+        return try {
+            CryptoEnum.find(this.type ?: "").encrypt.invoke(this, rawBytes)
+        } catch (e: Throwable) {
+            "加密失败: \r\n$e\r\n${e.stackTrace.map { it.toString() }}"
         }
-        return "加密失败"
+
     }
 
 
