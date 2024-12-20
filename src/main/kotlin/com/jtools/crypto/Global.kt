@@ -27,8 +27,8 @@ class Global : PersistentStateComponent<GlobalState> {
     private var state: GlobalState = GlobalState()
 
     companion object {
-//        fun getInstance(project: Project): GlobalState = project.getService(Global::class.java).state
-        fun getInstance(project: Project): GlobalState = GlobalState()
+        fun getInstance(project: Project): GlobalState = project.getService(Global::class.java).state
+//        fun getInstance(project: Project): GlobalState = GlobalState()
     }
 
     override fun getState(): GlobalState = state
