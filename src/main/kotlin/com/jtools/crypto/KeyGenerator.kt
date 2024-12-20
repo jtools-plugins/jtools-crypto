@@ -3,6 +3,7 @@ package com.jtools.crypto
 import com.lhstack.tools.plugins.Logger
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.lang3.RandomUtils
 import java.nio.charset.StandardCharsets
 import java.security.KeyPairGenerator
 import java.util.*
@@ -24,7 +25,7 @@ val generators = sortedMapOf<String, Consumer<Logger>>().apply {
     }
 
     this.put("AES_ECB_BASE64") {
-        it.activeConsolePanel().info("\nAES_ECB: ${Base64.getEncoder().encodeToString(RandomStringUtils.random(16).toByteArray(StandardCharsets.UTF_8))}")
+        it.activeConsolePanel().info("\nAES_ECB: ${Base64.getEncoder().encodeToString(RandomUtils.nextBytes(16))}")
     }
 
     this.put("AES_CBC_BASE64") {
@@ -32,14 +33,14 @@ val generators = sortedMapOf<String, Consumer<Logger>>().apply {
             """
                 
             AES_CBC: 
-                KEY: ${Base64.getEncoder().encodeToString(RandomStringUtils.random(16).toByteArray(StandardCharsets.UTF_8))}
-                IV: ${Base64.getEncoder().encodeToString(RandomStringUtils.random(16).toByteArray(StandardCharsets.UTF_8))}
+                KEY: ${Base64.getEncoder().encodeToString(RandomUtils.nextBytes(16))}
+                IV: ${Base64.getEncoder().encodeToString(RandomUtils.nextBytes(16))}
         """.trimIndent()
         )
     }
 
     this.put("AES_ECB_HEX") {
-        it.activeConsolePanel().info("\nAES_ECB: ${Hex.encodeHexString(RandomStringUtils.random(16).toByteArray(StandardCharsets.UTF_8))}")
+        it.activeConsolePanel().info("\nAES_ECB: ${Hex.encodeHexString(RandomUtils.nextBytes(16))}")
     }
 
     this.put("AES_CBC_HEX") {
@@ -47,8 +48,8 @@ val generators = sortedMapOf<String, Consumer<Logger>>().apply {
             """
                 
             AES_CBC: 
-                KEY: ${Hex.encodeHexString(RandomStringUtils.random(16).toByteArray(StandardCharsets.UTF_8))}
-                IV: ${Hex.encodeHexString(RandomStringUtils.random(16).toByteArray(StandardCharsets.UTF_8))}
+                KEY: ${Hex.encodeHexString(RandomUtils.nextBytes(16))}
+                IV: ${Hex.encodeHexString(RandomUtils.nextBytes(16))}
         """.trimIndent()
         )
     }
@@ -69,7 +70,7 @@ val generators = sortedMapOf<String, Consumer<Logger>>().apply {
     }
 
     this.put("DES_ECB_BASE64") {
-        it.activeConsolePanel().info("\nDES_ECB: ${Base64.getEncoder().encodeToString(RandomStringUtils.random(8).toByteArray(StandardCharsets.UTF_8))}")
+        it.activeConsolePanel().info("\nDES_ECB: ${Base64.getEncoder().encodeToString(RandomUtils.nextBytes(8))}")
     }
 
     this.put("DES_CBC_BASE64") {
@@ -77,14 +78,14 @@ val generators = sortedMapOf<String, Consumer<Logger>>().apply {
             """
                 
             DES_CBC: 
-                KEY: ${Base64.getEncoder().encodeToString(RandomStringUtils.random(8).toByteArray(StandardCharsets.UTF_8))}
-                IV: ${Base64.getEncoder().encodeToString(RandomStringUtils.random(8).toByteArray(StandardCharsets.UTF_8))}
+                KEY: ${Base64.getEncoder().encodeToString(RandomUtils.nextBytes(8))}
+                IV: ${Base64.getEncoder().encodeToString(RandomUtils.nextBytes(8))}
         """.trimIndent()
         )
     }
 
     this.put("DES_ECB_HEX") {
-        it.activeConsolePanel().info("\nDES_ECB: ${Hex.encodeHexString(RandomStringUtils.random(8).toByteArray(StandardCharsets.UTF_8))}")
+        it.activeConsolePanel().info("\nDES_ECB: ${Hex.encodeHexString(RandomUtils.nextBytes(8))}")
     }
 
     this.put("DES_CBC_HEX") {
@@ -92,8 +93,8 @@ val generators = sortedMapOf<String, Consumer<Logger>>().apply {
             """
                 
             DES_CBC: 
-                KEY: ${Hex.encodeHexString(RandomStringUtils.random(8).toByteArray(StandardCharsets.UTF_8))}
-                IV: ${Hex.encodeHexString(RandomStringUtils.random(8).toByteArray(StandardCharsets.UTF_8))}
+                KEY: ${Hex.encodeHexString(RandomUtils.nextBytes(8))}
+                IV: ${Hex.encodeHexString(RandomUtils.nextBytes(8))}
         """.trimIndent()
         )
     }
