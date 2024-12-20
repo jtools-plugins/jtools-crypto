@@ -19,18 +19,20 @@ import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBSplitter
 import com.intellij.ui.awt.RelativePoint
+import com.lhstack.tools.plugins.Logger
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Point
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.nio.charset.StandardCharsets
+import java.util.function.Consumer
 import javax.swing.BoxLayout
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 
-class EncryptView(private val project: Project) : JPanel(BorderLayout()), Disposable {
+class EncryptView(private val project: Project, logger: Logger) : JPanel(BorderLayout()), Disposable {
 
     private val disposer = Disposer.newDisposable()
 
@@ -87,6 +89,25 @@ class EncryptView(private val project: Project) : JPanel(BorderLayout()), Dispos
         this.add(JPanel(BorderLayout()).apply {
             this.add(JLabel("加密: "), BorderLayout.WEST)
 
+            val keyGenerateActionButton = object:AnAction({"密钥生成"},AllIcons.Actions.Dump){
+                override fun actionPerformed(e: AnActionEvent) {
+                    val popup = JBPopupFactory.getInstance().createListPopup(object :
+                        BaseListPopupStep<Map.Entry<String,Consumer<Logger>>>("选择生成密钥的方式",generators.entries.toList()) {
+                        override fun getTextFor(value: Map.Entry<String,Consumer<Logger>>): String {
+                            return "(${value.key})"
+                        }
+
+                        override fun onChosen(value: Map.Entry<String,Consumer<Logger>>, finalChoice: Boolean): PopupStep<*>? {
+                            value.value.accept(logger)
+                            return super.onChosen(value, finalChoice)
+                        }
+                    })
+                    popup.size = Dimension(300,200)
+                    popup.showInBestPositionFor(e.dataContext)
+                }
+
+            }
+
 
             val fastEncryptActionButton = object : AnAction({ "快速加密" }, AllIcons.Actions.Execute) {
                 override fun actionPerformed(e: AnActionEvent) {
@@ -141,6 +162,12 @@ class EncryptView(private val project: Project) : JPanel(BorderLayout()), Dispos
                 override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT
 
             }
+
+            val keyGenerateButton = ActionButton(keyGenerateActionButton,
+                PresentationFactory().getPresentation(keyGenerateActionButton),
+                "JTools@DeCryptoMainView@KeyGenerateButton",
+                ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE)
+
             val encryptButton = ActionButton(
                 encryptActionButton,
                 PresentationFactory().getPresentation(encryptActionButton),
@@ -158,6 +185,7 @@ class EncryptView(private val project: Project) : JPanel(BorderLayout()), Dispos
             this.add(JPanel().apply {
                 this.layout = BoxLayout(this, BoxLayout.X_AXIS)
                 this.add(currLabel)
+                this.add(keyGenerateButton)
                 this.add(encryptButton)
                 this.add(fastEncryptButton)
             }, BorderLayout.EAST)

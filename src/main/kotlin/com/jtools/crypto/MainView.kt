@@ -7,29 +7,31 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBSplitter
+import com.lhstack.tools.plugins.Logger
 import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 
-class MainView(private val project: Project) : SimpleToolWindowPanel(false), Disposable {
+class MainView(private val project: Project, val logger: Logger) : SimpleToolWindowPanel(false), Disposable {
 
     private val disposer = Disposer.newDisposable()
+
     init {
         toolbar = createActionToolbar()
         setContent(createContent())
     }
 
-    private fun createContent():JComponent = JPanel(BorderLayout()).apply {
+    private fun createContent(): JComponent = JPanel(BorderLayout()).apply {
         val splitter = JBSplitter().apply {
             this.firstComponent = DecryptView(project).apply {
-                Disposer.register(disposer,this)
+                Disposer.register(disposer, this)
             }
 
-            this.secondComponent = EncryptView(project).apply {
-                Disposer.register(disposer,this)
+            this.secondComponent = EncryptView(project,logger).apply {
+                Disposer.register(disposer, this)
             }
         }
-        this.add(splitter,BorderLayout.CENTER)
+        this.add(splitter, BorderLayout.CENTER)
     }
 
     private fun createActionToolbar(): JComponent = DefaultActionGroup().let { group ->
